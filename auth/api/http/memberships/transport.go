@@ -225,7 +225,7 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	case errors.Contains(err, auth.ErrOrgMembershipExists):
 		w.WriteHeader(http.StatusConflict)
 	default:
-		apiutil.EncodeError(err, w)
+		apiutil.ErrorEncoder(err, w)
 	}
 
 	apiutil.WriteErrorResponse(err, w)

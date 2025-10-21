@@ -118,7 +118,7 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	case errors.Contains(err, messaging.ErrMalformedSubtopic):
 		w.WriteHeader(http.StatusBadRequest)
 	default:
-		apiutil.EncodeError(err, w)
+		apiutil.ErrorEncoder(err, w)
 	}
 
 	apiutil.WriteErrorResponse(err, w)

@@ -135,6 +135,6 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 		return
 	}
 
-	apiutil.EncodeError(err, w)
+	apiutil.ErrorEncoder(err, w)
 	apiutil.WriteErrorResponse(err, w)
 }

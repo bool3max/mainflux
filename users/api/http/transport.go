@@ -541,7 +541,7 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	case errors.Contains(err, users.ErrSelfRegisterDisabled):
 		w.WriteHeader(http.StatusForbidden)
 	default:
-		apiutil.EncodeError(err, w)
+		apiutil.ErrorEncoder(err, w)
 	}
 
 	apiutil.WriteErrorResponse(err, w)

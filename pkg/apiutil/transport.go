@@ -178,11 +178,11 @@ func EncodeGRPCError(st *status.Status, w http.ResponseWriter) {
 	}
 }
 
-// EncodeError returns a kithttp.ErrorEncoder that handles encoding the passed-in error
+// ErrorEncoder returns a kithttp.ErrorEncoder that handles encoding the passed-in error
 // into an HTTP response. `enc` can be used to pass a custom error matching function - if the result
 // of its call is non-zero it is used as a HTTP status code in the response. Otherwise, error matching is
 // further performed against a generic set of errors that can occurr in multiple services.
-func EncodeError(enc func(error) int) kithttp.ErrorEncoder {
+func ErrorEncoder(enc func(error) int) kithttp.ErrorEncoder {
 	return func(_ context.Context, err error, w http.ResponseWriter) {
 		// Err is a gRPC-error
 		if st, ok := status.FromError(err); ok {

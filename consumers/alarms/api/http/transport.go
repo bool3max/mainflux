@@ -22,7 +22,7 @@ import (
 // MakeHandler returns a HTTP handler for Alarm API endpoints.
 func MakeHandler(tracer opentracing.Tracer, svc alarms.Service, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, apiutil.EncodeError(encodeError))),
+		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, apiutil.ErrorEncoder(encodeError))),
 	}
 
 	r := bone.New()

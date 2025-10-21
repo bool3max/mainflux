@@ -360,7 +360,7 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	case errors.Contains(err, readers.ErrReadMessages):
 		w.WriteHeader(http.StatusInternalServerError)
 	default:
-		apiutil.EncodeError(err, w)
+		apiutil.ErrorEncoder(err, w)
 	}
 
 	apiutil.WriteErrorResponse(err, w)

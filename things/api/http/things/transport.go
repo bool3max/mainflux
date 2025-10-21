@@ -27,7 +27,7 @@ import (
 // MakeHandler returns a HTTP handler for API endpoints.
 func MakeHandler(svc things.Service, mux *bone.Mux, tracer opentracing.Tracer, logger log.Logger) *bone.Mux {
 	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, apiutil.EncodeError(encodeError))),
+		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, apiutil.ErrorEncoder(encodeError))),
 	}
 
 	mux.Post("/profiles/:id/things", kithttp.NewServer(
