@@ -19,7 +19,6 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/go-zoo/bone"
 	"github.com/opentracing/opentracing-go"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -29,7 +28,7 @@ const (
 // MakeHandler returns a HTTP handler for API endpoints.
 func MakeHandler(svc things.Service, mux *bone.Mux, tracer opentracing.Tracer, logger log.Logger) *bone.Mux {
 	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, encodeError)),
+		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, apiutil.EncodeError(encodeError))),
 	}
 
 	mux.Post("/groups/:id/memberships", kithttp.NewServer(
@@ -181,21 +180,13 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 	return json.NewEncoder(w).Encode(response)
 }
 
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
-	if st, ok := status.FromError(err); ok {
-		apiutil.EncodeGRPCError(st, w)
-		apiutil.WriteErrorResponse(err, w)
-		return
-	}
-
+func encodeError(err error) int {
 	switch {
 	case errors.Contains(err, things.ErrGroupMembershipExists):
-		w.WriteHeader(http.StatusConflict)
+		return http.StatusConflict
 	case errors.Contains(err, uuid.ErrGeneratingID):
-		w.WriteHeader(http.StatusInternalServerError)
-	default:
-		apiutil.EncodeError(err, w)
+		return http.StatusInternalServerError
 	}
 
-	apiutil.WriteErrorResponse(err, w)
+	return 0
 }

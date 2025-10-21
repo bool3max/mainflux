@@ -17,13 +17,12 @@ import (
 	"github.com/go-zoo/bone"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"google.golang.org/grpc/status"
 )
 
 // MakeHandler returns a HTTP handler for Alarm API endpoints.
 func MakeHandler(tracer opentracing.Tracer, svc alarms.Service, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, encodeError)),
+		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, apiutil.EncodeError(encodeError))),
 	}
 
 	r := bone.New()
@@ -149,19 +148,11 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 	return json.NewEncoder(w).Encode(response)
 }
 
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
-	if st, ok := status.FromError(err); ok {
-		apiutil.EncodeGRPCError(st, w)
-		apiutil.WriteErrorResponse(err, w)
-		return
-	}
-
+func encodeError(err error) int {
 	switch {
 	case errors.Contains(err, uuid.ErrGeneratingID):
-		w.WriteHeader(http.StatusInternalServerError)
-	default:
-		apiutil.EncodeError(err, w)
+		return http.StatusInternalServerError
 	}
 
-	apiutil.WriteErrorResponse(err, w)
+	return 0
 }

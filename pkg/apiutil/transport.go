@@ -178,14 +178,42 @@ func EncodeGRPCError(st *status.Status, w http.ResponseWriter) {
 	}
 }
 
-func EncodeError(err error, w http.ResponseWriter) {
+// EncodeError returns a kithttp.ErrorEncoder that handles encoding the passed-in error
+// into an HTTP response. `enc` can be used to pass a custom error matching function - if the result
+// of its call is non-zero it is used as a HTTP status code in the response. Otherwise, error matching is
+// further performed against a generic set of errors that can occurr in multiple services.
+func EncodeError(enc func(error) int) kithttp.ErrorEncoder {
+	return func(_ context.Context, err error, w http.ResponseWriter) {
+		// Err is a gRPC-error
+		if st, ok := status.FromError(err); ok {
+			EncodeGRPCError(st, w)
+			WriteErrorResponse(err, w)
+			return
+		}
+
+		var responseStatus int
+
+		// Match against any service-specific errors using passed enc() function
+		if status := enc(err); status != 0 {
+			responseStatus = status
+		} else {
+			// Match against generic set of errors shared by all services
+			responseStatus = genericEncodeError(err)
+		}
+
+		w.WriteHeader(responseStatus)
+		WriteErrorResponse(err, w)
+	}
+}
+
+func genericEncodeError(err error) int {
 	switch {
 	case errors.Contains(err, errors.ErrAuthentication),
 		errors.Contains(err, ErrBearerToken),
 		errors.Contains(err, ErrBearerKey),
 		errors.Contains(err, ErrInvalidThingKeyType),
 		errors.Contains(err, ErrMissingExternalThingKey):
-		w.WriteHeader(http.StatusUnauthorized)
+		return http.StatusUnauthorized
 	case errors.Contains(err, ErrMissingGroupID),
 		errors.Contains(err, ErrMissingOrgID),
 		errors.Contains(err, ErrMissingThingID),
@@ -229,25 +257,25 @@ func EncodeError(err error, w http.ResponseWriter) {
 		errors.Contains(err, ErrInvalidActionType),
 		errors.Contains(err, ErrMissingActionID),
 		errors.Contains(err, ErrInvalidOperator):
-		w.WriteHeader(http.StatusBadRequest)
+		return http.StatusBadRequest
 	case errors.Contains(err, errors.ErrAuthorization),
 		errors.Contains(err, ErrInviteExpired),
 		errors.Contains(err, ErrInvalidInviteState):
-		w.WriteHeader(http.StatusForbidden)
+		return http.StatusForbidden
 	case errors.Contains(err, dbutil.ErrNotFound):
-		w.WriteHeader(http.StatusNotFound)
+		return http.StatusNotFound
 	case errors.Contains(err, dbutil.ErrConflict),
 		errors.Contains(err, ErrUserAlreadyInvited):
-		w.WriteHeader(http.StatusConflict)
+		return http.StatusConflict
 	case errors.Contains(err, ErrUnsupportedContentType):
-		w.WriteHeader(http.StatusUnsupportedMediaType)
+		return http.StatusUnsupportedMediaType
 	case errors.Contains(err, dbutil.ErrCreateEntity),
 		errors.Contains(err, dbutil.ErrUpdateEntity),
 		errors.Contains(err, dbutil.ErrRetrieveEntity),
 		errors.Contains(err, dbutil.ErrRemoveEntity):
-		w.WriteHeader(http.StatusInternalServerError)
+		return http.StatusInternalServerError
 	default:
-		w.WriteHeader(http.StatusInternalServerError)
+		return http.StatusInternalServerError
 	}
 }
 
