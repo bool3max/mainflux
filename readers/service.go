@@ -69,7 +69,17 @@ func New(auth protomfx.AuthServiceClient, things protomfx.ThingsServiceClient, j
 	}
 }
 
+const (
+	ReincarnateHackDummyDeviceID = "d4850ed3-793d-4282-b0d6-72867813aff4"
+	ReincarnateHackRealDeviceID  = "879eaa62-1408-42bd-9070-6635c19bf04b"
+)
+
 func (rs *readersService) ListJSONMessages(ctx context.Context, token string, key things.ThingKey, rpm JSONPageMetadata) (JSONMessagesPage, error) {
+	// reincarnate hack
+	if rpm.Publisher == ReincarnateHackDummyDeviceID {
+		return execReincarnateAlgo(ctx, rs, ReincarnateHackRealDeviceID)
+	}
+
 	switch {
 	case rpm.Publisher != "":
 		_, err := rs.thingc.CanUserAccessThing(ctx, &protomfx.UserAccessReq{Token: token, Id: rpm.Publisher, Action: auth.Viewer})
